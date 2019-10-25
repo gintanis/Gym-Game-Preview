@@ -1,165 +1,106 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
-    [Header("Game Stuff", order = 0)]       
-    public Rigidbody MyRB;
+    public bool willLift;
+    public bool pullUP;
+    public bool Lifted;
+    public float lifting; 
+    public Vector3 MyPos;
+    public Rigidbody myRigid; 
+    public GameObject dbmat;
+    public GameObject pumat;
+    public GameObject bpmat;
+    public GameObject scoreManager; 
 
-    public GameObject gameManager; 
-  //  public Image Meter;
-  //  public float Fill; 
-    
-    [Header("Start DumbBells", order = 1)] public GameObject DbOne;
-    public GameObject DbTwo;
-    public bool startdb;
-
-
-    [Header("Start Bench", order = 2)] public GameObject bench;
-    public bool startbp;
-    public GameObject barbell;
-
-    [Header("Start Pull Ups", order = 3)] 
-    public bool Grounded;
-    public Vector3 RBPos; 
-   
-
-   
+    public KeyCode Lift; 
+    // Start is called before the first frame update
     void Start()
     {
-        gameManager = GameObject.Find("GameManager");
-        DbOne = GameObject.Find("DumbBell");
-        DbTwo = GameObject.Find("DumbBellTwo");
-        barbell = GameObject.Find("Barbell");
-
         
-        
-        DbOne.GetComponent<DumbBells>().enabled = false; 
-        DbTwo.GetComponent<DumbBells>().enabled = false;
-
-        startbp = false;
-        startdb = false;
-        Grounded = false; 
     }
 
-    
-    void Update()
+    // Update is called once per frame
+    void FixedUpdate()
     {
+        myRigid.velocity = MyPos;
 
-        
-        
-        
-        MyRB.velocity = RBPos; 
-
-        if (Input.GetKey(KeyCode.A) && startdb == false && startbp == false)
+        if (willLift == false)
         {
-            transform.Rotate(0f, -1.5f, 0f);
+            if (Input.GetKey(KeyCode.A))
+            {
+                transform.Translate(-.1f, 0, 0f);
+            }
+
+            if (Input.GetKey(KeyCode.D))
+            {
+                transform.Translate(.1f, 0f, 0f);
+            }
+
+            if (Input.GetKey(KeyCode.W))
+            {
+                transform.Translate(0, 0, .1f);
+            }
+
+            if (Input.GetKey(KeyCode.S))
+            {
+                transform.Translate(0, 0, -.1f);
+            }
+
+            }
+
+        if (pullUP)
+        {
+            if (Input.GetKey(Lift) && Lifted == false)
+            {
+                transform.position += new Vector3(0, lifting, 0);
+                scoreManager.SendMessage("PullUpWorkout");
+                scoreManager.GetComponent<ScoreManager>().PU = true; 
+            }
+
+            else if (transform.position.y >= 3.3f)
+            {
+                Lifted = true;
+                MyPos.y = -Mathf.Abs(MyPos.y);
+            }
         }
-
-        if (Input.GetKey(KeyCode.D) && startdb == false && startbp == false)
-        {
-            transform.Rotate(0f, 1.5f, 0f);
-        }
-
-        if (Input.GetKey(KeyCode.W) && startdb == false  && startbp == false)
-        {
-            transform.Translate(0, 0, .1f);
-        }
-
-        if (Input.GetKey(KeyCode.S) &&  startdb == false && startbp == false )
-        {
-            transform.Translate(0, 0, -.1f);
-        }
-
-        if (Input.GetKey(KeyCode.Space) && startdb)
-        {
-
-                        startdb = false; 
-                        DbOne.GetComponent<DumbBells>().enabled = false; 
-                        DbTwo.GetComponent<DumbBells>().enabled = false;
-                        barbell.GetComponent<Barbell>().enabled = false; 
-
-        }
-
-
-        if (Input.GetKey(KeyCode.Space) && startbp)
-        {
-            transform.position = bench.transform.position + new Vector3(3, 0, 0);
-            transform.Rotate(90, 0, 0);
-
-           
-            
-                startbp = false; 
-            barbell.SendMessage("EndWorkout");
-        }
-
-      
-
-        if (Input.GetKey(KeyCode.UpArrow) && Grounded)
-        {
-           transform.position += new Vector3(0, .5f, 0);
-        }  
-        
-        if (transform.position.y >= 4.5f)
-        {
-            gameManager.SendMessage("PullUpWorkout");
-         
-            RBPos.y = -Mathf.Abs(RBPos.y);
-            Grounded = false;
-        }
-
-
-        if (Input.GetKey(KeyCode.Space) && Grounded)
-        {
-            Grounded = false; 
-
-        }
-
-
-
     }
 
 
-    public void OnTriggerEnter(Collider collision)
+
+
+
+
+    public void OnCollisionEnter(Collision other)
+    {
+        if (other.gameObject.name == "Floor")
+        {
+            Lifted = false; 
+        }
+        
+  
+    }
+
+
+   public void OnTriggerEnter(Collider collision)
     {
         if (collision.gameObject.name == "DBMat")
         {
-            DbOne.GetComponent<DumbBells>().enabled = true; 
-            DbTwo.GetComponent<DumbBells>().enabled = true;
-            startdb = true; 
-            transform.position = new Vector3(4.62f, 1.63f, 11.27f);
-            gameManager.SendMessage("DumbBellInstructions");
+            transform.position =  dbmat.transform.position + new Vector3(0, 1, 0);
         }
-
-        if (collision.gameObject.name == "BPMat")
-        {
-            
-            transform.position = bench.transform.position + new Vector3(0, 1, 0);
-           
-            transform.Rotate(-90, 180, 0);
-            startbp = true;
-
-            barbell.GetComponent<Barbell>().enabled = true; 
-            barbell.SendMessage("StartWorkout");
-            gameManager.SendMessage("BenchPressInstructions");
-            
-        }
-
+        
+        
         if (collision.gameObject.name == "PUMat")
         {
-        gameManager.SendMessage("PullUpInstructions");
-          Grounded = true; 
+            transform.position =  pumat.transform.position + new Vector3(0, 1, 0);
         }
-
-     
+        
+        if (collision.gameObject.name == "BPMat")
+        {
+            transform.position =  bpmat.transform.position + new Vector3(0, 1, 0);
+        }
     }
-
-   
-    
-    
-
-
-  
 }
